@@ -103,7 +103,7 @@ h1 {
 .input-icon { color: var(--text-4); font-weight: 500; margin-right: 0.5rem; }
 .input-suffix { color: var(--text-4); font-size: 0.8rem; margin-left: 0.25rem; }
 
-input[type="text"], input[type="number"] {
+input[type="text"], input[type="number"], input[type="password"] {
     flex: 1;
     background: transparent;
     border: none;
@@ -120,6 +120,45 @@ input::placeholder { color: var(--text-4); }
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 input[type="number"] { -moz-appearance: textfield; }
+
+/* ===== OAUTH SECTION ===== */
+.oauth-section {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--surface-border);
+}
+
+.oauth-note {
+    font-size: 0.8rem;
+    color: var(--text-2);
+    font-weight: 500;
+}
+
+.oauth-hint {
+    font-size: 0.7rem;
+    color: var(--text-4);
+    margin-top: 0.75rem;
+    line-height: 1.6;
+}
+
+.oauth-hint a {
+    color: var(--text-3);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: color var(--ease);
+}
+
+.oauth-hint a:hover {
+    color: var(--text);
+}
+
+.oauth-hint code {
+    background: rgba(255,255,255,0.08);
+    padding: 0.1em 0.35em;
+    border-radius: 3px;
+    font-size: 0.85em;
+    color: var(--text-2);
+}
 
 /* ===== FILE DROP ===== */
 .file-drop-area {

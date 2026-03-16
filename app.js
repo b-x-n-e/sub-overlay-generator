@@ -1,6 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     // ===== REFS =====
     const channelInput = document.getElementById('channel');
+    const oauthTokenInput = document.getElementById('oauth-token');
+    const userIdInput = document.getElementById('user-id');
+    const oauthSection = document.getElementById('oauth-section');
     const useGlobalAudioCb = document.getElementById('use-global-audio');
     const globalAudioArea = document.getElementById('global-audio-area');
     const generateBtn = document.getElementById('generate-btn');
@@ -11,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const mediaContainer = document.getElementById('media-container');
     const alertText = document.getElementById('alert-text');
 
-    const EVENT_KEYS = ['tier1', 'tier2', 'tier3', 'gift', 'massgift'];
+    const EVENT_KEYS = ['follow', 'tier1', 'tier2', 'tier3', 'gift', 'massgift'];
 
     // Store base64 data URLs keyed by their data-key attribute
     const fileData = {};
@@ -69,6 +72,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ===== OAUTH SECTION VISIBILITY =====
+    function syncOauthVisibility() {
+        const followToggle = document.querySelector('.event-toggle[data-event="follow"]');
+        const followEnabled = followToggle && followToggle.checked;
+        oauthSection.style.display = followEnabled ? '' : 'none';
+    }
+
     // ===== EVENT TOGGLES =====
     document.querySelectorAll('.event-toggle').forEach(cb => {
         cb.addEventListener('change', () => {
@@ -81,6 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body.style.display = 'none';
                 block.classList.remove('active');
             }
+            syncOauthVisibility();
         });
         // init state
         const block = cb.closest('.event-block');
@@ -89,6 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
             block.classList.add('active');
         }
     });
+    syncOauthVisibility();
 
     // ===== COLLECT CONFIG =====
     function collectConfig() {
@@ -97,6 +109,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const useGlobalAudio = useGlobalAudioCb.checked;
         const globalAudio = useGlobalAudio ? (fileData['global-audio'] || null) : null;
+
+        const followToggle = document.querySelector('.event-toggle[data-event="follow"]');
+        const followEnabled = followToggle && followToggle.checked;
+
+        let oauthToken = '';
+        let userId = '';
+
+        if (followEnabled) {
+            oauthToken = oauthTokenInput.value.trim();
+            userId = userIdInput.value.trim();
+            if (!oauthToken) { alert('Follow alerts require an OAuth token. Please enter one.'); return null; }
+            if (!userId) { alert('Follow alerts require your Twitch User ID. Please enter one.'); return null; }
+            // Strip "oauth:" prefix if the user included it
+            if (oauthToken.toLowerCase().startsWith('oauth:')) {
+                oauthToken = oauthToken.substring(6);
+            }
+        }
 
         const events = {};
         let hasAnyEnabled = false;
@@ -130,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!hasAnyEnabled) { alert('Please enable and configure at least one event.'); return null; }
 
-        return { channel, events };
+        return { channel, events, oauthToken, userId, followEnabled };
     }
 
     // ===== GENERATE HTML =====
@@ -143,40 +172,15 @@ document.addEventListener('DOMContentLoaded', () => {
     function downloadOverlay(config) {
         const eventsJSON = JSON.stringify(config.events).replace(/<\/script>/gi, '<\\/script>');
 
-        const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Sub Overlay – ${config.channel}</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tmi.js/1.8.5/tmi.min.js"><\/script>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:transparent;overflow:hidden;font-family:'Inter',sans-serif;display:flex;justify-content:center;align-items:center;height:100vh}
-.hidden{display:none!important}
-#alert-box{text-align:center;display:flex;flex-direction:column;align-items:center;gap:1.25rem}
-#media-container img,#media-container video{max-width:800px;max-height:500px;border-radius:8px}
-@keyframes alertIn{0%{transform:scale(.9);opacity:0;filter:blur(12px)}100%{transform:scale(1);opacity:1;filter:blur(0)}}
-@keyframes alertOut{0%{transform:scale(1);opacity:1;filter:blur(0)}100%{transform:scale(.9);opacity:0;filter:blur(12px)}}
-#alert-text{font-size:3rem;font-weight:700;color:#fff;text-shadow:0 0 20px rgba(255,255,255,.3),0 2px 4px rgba(0,0,0,.8)}
-</style>
-</head>
-<body>
-<div id="alert-box" class="hidden">
-<div id="media-container"></div>
-<h2 id="alert-text"></h2>
-</div>
-<script>
-(function(){
-var CHANNEL="${config.channel}";
-var EVENTS=${eventsJSON};
+        // Determine if we need tmi.js (for sub events)
+        const hasSubEvents = ['tier1','tier2','tier3','gift','massgift'].some(k => config.events[k]);
+        const tmiScript = hasSubEvents
+            ? `<script src="https://cdnjs.cloudflare.com/ajax/libs/tmi.js/1.8.5/tmi.min.js"><\\/script>`
+            : '';
 
-var alertBox=document.getElementById('alert-box');
-var mediaContainer=document.getElementById('media-container');
-var alertText=document.getElementById('alert-text');
-var queue=[];
-var playing=false;
-
+        // Build tmi.js sub listener code (only if sub events exist)
+        const tmiCode = hasSubEvents ? `
+// === TMI.JS — Sub Events ===
 function getTier(userstate){
     var plan=userstate&&userstate['msg-param-sub-plan'];
     if(!plan||plan==='Prime'||plan==='1000')return 'tier1';
@@ -206,7 +210,132 @@ client.on('submysterygift',function(channel,username,numbOfGifts,methods,usersta
 });
 
 client.connect().catch(console.error);
+` : '';
 
+        // Build EventSub WebSocket code (only if follow is enabled)
+        const eventSubCode = config.followEnabled ? `
+// === EVENTSUB WEBSOCKET — Follow Events ===
+var OAUTH_TOKEN="${config.oauthToken}";
+var USER_ID="${config.userId}";
+var esWs=null;
+var keepaliveTimeout=null;
+var CLIENT_ID="";
+
+// First, get the client ID associated with this token
+fetch("https://id.twitch.tv/oauth2/validate",{headers:{"Authorization":"OAuth "+OAUTH_TOKEN}})
+.then(function(r){return r.json();})
+.then(function(data){
+    if(!data.client_id){console.error("Invalid OAuth token");return;}
+    CLIENT_ID=data.client_id;
+    connectEventSub();
+})
+.catch(function(e){console.error("Token validation failed:",e);});
+
+function connectEventSub(reconnectUrl){
+    var url=reconnectUrl||"wss://eventsub.wss.twitch.tv/ws";
+    esWs=new WebSocket(url);
+
+    esWs.onmessage=function(event){
+        var msg=JSON.parse(event.data);
+        var type=msg.metadata&&msg.metadata.message_type;
+
+        if(type==="session_welcome"){
+            var sessionId=msg.payload.session.id;
+            var ka=msg.payload.session.keepalive_timeout_seconds||30;
+            resetKeepalive(ka);
+            // Subscribe to channel.follow v2
+            fetch("https://api.twitch.tv/helix/eventsub/subscriptions",{
+                method:"POST",
+                headers:{
+                    "Authorization":"Bearer "+OAUTH_TOKEN,
+                    "Client-Id":CLIENT_ID,
+                    "Content-Type":"application/json"
+                },
+                body:JSON.stringify({
+                    type:"channel.follow",
+                    version:"2",
+                    condition:{broadcaster_user_id:USER_ID,moderator_user_id:USER_ID},
+                    transport:{method:"websocket",session_id:sessionId}
+                })
+            })
+            .then(function(r){return r.json();})
+            .then(function(d){
+                if(d.data&&d.data.length){console.log("Subscribed to channel.follow");}
+                else{console.error("Follow sub failed:",d);}
+            })
+            .catch(function(e){console.error("Follow sub error:",e);});
+        }
+        else if(type==="notification"){
+            resetKeepalive(30);
+            var sub=msg.payload.subscription;
+            if(sub&&sub.type==="channel.follow"){
+                var follower=msg.payload.event.user_name;
+                if(EVENTS.follow)q("follow",{user:follower});
+            }
+        }
+        else if(type==="session_keepalive"){
+            resetKeepalive(30);
+        }
+        else if(type==="session_reconnect"){
+            var newUrl=msg.payload.session.reconnect_url;
+            connectEventSub(newUrl);
+        }
+        else if(type==="revocation"){
+            console.warn("EventSub subscription revoked:",msg.payload.subscription.status);
+        }
+    };
+
+    esWs.onerror=function(e){console.error("EventSub WS error:",e);};
+    esWs.onclose=function(){
+        console.log("EventSub WS closed, reconnecting in 5s...");
+        setTimeout(function(){connectEventSub();},5000);
+    };
+}
+
+function resetKeepalive(seconds){
+    if(keepaliveTimeout)clearTimeout(keepaliveTimeout);
+    keepaliveTimeout=setTimeout(function(){
+        console.warn("Keepalive timeout, reconnecting...");
+        if(esWs)esWs.close();
+        connectEventSub();
+    },(seconds+5)*1000);
+}
+` : '';
+
+        const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Stream Overlay – ${config.channel}</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@700&display=swap" rel="stylesheet">
+${tmiScript}
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:transparent;overflow:hidden;font-family:'Inter',sans-serif;display:flex;justify-content:center;align-items:center;height:100vh}
+.hidden{display:none!important}
+#alert-box{text-align:center;display:flex;flex-direction:column;align-items:center;gap:1.25rem}
+#media-container img,#media-container video{max-width:800px;max-height:500px;border-radius:8px}
+@keyframes alertIn{0%{transform:scale(.9);opacity:0;filter:blur(12px)}100%{transform:scale(1);opacity:1;filter:blur(0)}}
+@keyframes alertOut{0%{transform:scale(1);opacity:1;filter:blur(0)}100%{transform:scale(.9);opacity:0;filter:blur(12px)}}
+#alert-text{font-size:3rem;font-weight:700;color:#fff;text-shadow:0 0 20px rgba(255,255,255,.3),0 2px 4px rgba(0,0,0,.8)}
+</style>
+</head>
+<body>
+<div id="alert-box" class="hidden">
+<div id="media-container"></div>
+<h2 id="alert-text"></h2>
+</div>
+<script>
+(function(){
+var CHANNEL="${config.channel}";
+var EVENTS=${eventsJSON};
+
+var alertBox=document.getElementById('alert-box');
+var mediaContainer=document.getElementById('media-container');
+var alertText=document.getElementById('alert-text');
+var queue=[];
+var playing=false;
+${tmiCode}${eventSubCode}
 function q(eventKey,vars){queue.push({key:eventKey,vars:vars});if(!playing)proc();}
 
 function proc(){
@@ -259,7 +388,7 @@ function show(eventKey,vars){
     },ev.duration*1000);
 }
 })();
-<\/script>
+<\\/script>
 </body>
 </html>`;
 
@@ -296,7 +425,7 @@ function show(eventKey,vars){
         const useGlobal = useGlobalAudioCb.checked;
         const audio = useGlobal ? (fileData['global-audio'] || null) : (fileData[`${key}-audio`] || null);
 
-        const names = { tier1: 'Tier1Fan', tier2: 'Tier2Pro', tier3: 'Tier3Ultra', gift: 'GenerousGifter', massgift: 'MegaGifter' };
+        const names = { follow: 'NewFollower', tier1: 'Tier1Fan', tier2: 'Tier2Pro', tier3: 'Tier3Ultra', gift: 'GenerousGifter', massgift: 'MegaGifter' };
         const testVars = {
             user: names[key] || 'TestUser',
             gifter: 'BigSpender',
