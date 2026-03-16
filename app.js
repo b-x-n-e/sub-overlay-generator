@@ -3,7 +3,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const channelInput = document.getElementById('channel');
     const oauthTokenInput = document.getElementById('oauth-token');
     const userIdInput = document.getElementById('user-id');
+    const clientIdInput = document.getElementById('client-id');
     const oauthSection = document.getElementById('oauth-section');
+    const oauthDisconnected = document.getElementById('oauth-disconnected');
+    const oauthConnected = document.getElementById('oauth-connected');
+    const twitchConnectBtn = document.getElementById('twitch-connect-btn');
+    const twitchDisconnectBtn = document.getElementById('twitch-disconnect-btn');
+    const twitchUsername = document.getElementById('twitch-username');
+    const redirectUrlDisplay = document.getElementById('redirect-url-display');
     const useGlobalAudioCb = document.getElementById('use-global-audio');
     const globalAudioArea = document.getElementById('global-audio-area');
     const generateBtn = document.getElementById('generate-btn');
@@ -18,6 +25,114 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Store base64 data URLs keyed by their data-key attribute
     const fileData = {};
+
+    // Show the redirect URL so user knows what to set in Twitch dev console
+    const REDIRECT_URI = window.location.origin + window.location.pathname;
+    redirectUrlDisplay.textContent = REDIRECT_URI;
+
+    // ===== TWITCH OAUTH FLOW =====
+    // Restore saved client ID
+    const savedClientId = localStorage.getItem('twitch_client_id');
+    if (savedClientId) clientIdInput.value = savedClientId;
+
+    // Check for token in URL hash (returned from Twitch OAuth redirect)
+    function checkOAuthReturn() {
+        const hash = window.location.hash;
+        if (!hash || !hash.includes('access_token')) return;
+
+        const params = new URLSearchParams(hash.substring(1));
+        const token = params.get('access_token');
+        if (!token) return;
+
+        // Clean the URL hash
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+
+        // Validate token and get user info
+        validateAndConnect(token);
+    }
+
+    function validateAndConnect(token) {
+        fetch('https://id.twitch.tv/oauth2/validate', {
+            headers: { 'Authorization': 'OAuth ' + token }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.user_id || !data.login) {
+                console.error('Token validation failed:', data);
+                alert('OAuth token is invalid or expired. Please try connecting again.');
+                return;
+            }
+
+            // Store the client ID from the token for the generated overlay
+            const clientId = data.client_id;
+            localStorage.setItem('twitch_client_id', clientId);
+            clientIdInput.value = clientId;
+
+            // Set hidden fields
+            oauthTokenInput.value = token;
+            userIdInput.value = data.user_id;
+
+            // Show connected state
+            twitchUsername.textContent = data.login;
+            oauthDisconnected.style.display = 'none';
+            oauthConnected.style.display = '';
+
+            // Save session
+            localStorage.setItem('twitch_token', token);
+            localStorage.setItem('twitch_user_id', data.user_id);
+            localStorage.setItem('twitch_username', data.login);
+
+            console.log('Connected as', data.login, '(ID:', data.user_id + ')');
+        })
+        .catch(e => {
+            console.error('Token validation error:', e);
+            alert('Could not validate token. Check your internet connection.');
+        });
+    }
+
+    // Connect with Twitch button
+    twitchConnectBtn.addEventListener('click', () => {
+        const clientId = clientIdInput.value.trim();
+        if (!clientId) {
+            alert('Please enter your Twitch App Client ID first.');
+            return;
+        }
+        localStorage.setItem('twitch_client_id', clientId);
+
+        const authUrl = 'https://id.twitch.tv/oauth2/authorize'
+            + '?client_id=' + encodeURIComponent(clientId)
+            + '&redirect_uri=' + encodeURIComponent(REDIRECT_URI)
+            + '&response_type=token'
+            + '&scope=moderator:read:followers';
+
+        window.location.href = authUrl;
+    });
+
+    // Disconnect button
+    twitchDisconnectBtn.addEventListener('click', () => {
+        oauthTokenInput.value = '';
+        userIdInput.value = '';
+        twitchUsername.textContent = '';
+        oauthDisconnected.style.display = '';
+        oauthConnected.style.display = 'none';
+        localStorage.removeItem('twitch_token');
+        localStorage.removeItem('twitch_user_id');
+        localStorage.removeItem('twitch_username');
+    });
+
+    // Try to restore saved session on load
+    function restoreSession() {
+        const savedToken = localStorage.getItem('twitch_token');
+        if (savedToken) {
+            validateAndConnect(savedToken);
+        }
+    }
+
+    // Check OAuth return first, then try restore
+    checkOAuthReturn();
+    if (!oauthTokenInput.value) {
+        restoreSession();
+    }
 
     // ===== FILE HANDLING =====
     document.querySelectorAll('.file-drop-area').forEach(area => {
@@ -115,13 +230,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let oauthToken = '';
         let userId = '';
+        let clientId = '';
 
         if (followEnabled) {
             oauthToken = oauthTokenInput.value.trim();
             userId = userIdInput.value.trim();
-            if (!oauthToken) { alert('Follow alerts require an OAuth token. Please enter one.'); return null; }
-            if (!userId) { alert('Follow alerts require your Twitch User ID. Please enter one.'); return null; }
-            // Strip "oauth:" prefix if the user included it
+            clientId = clientIdInput.value.trim();
+            if (!oauthToken || !userId) {
+                alert('Please connect your Twitch account first (click "Connect with Twitch").');
+                return null;
+            }
+            // Strip "oauth:" prefix if present
             if (oauthToken.toLowerCase().startsWith('oauth:')) {
                 oauthToken = oauthToken.substring(6);
             }
@@ -159,7 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!hasAnyEnabled) { alert('Please enable and configure at least one event.'); return null; }
 
-        return { channel, events, oauthToken, userId, followEnabled };
+        return { channel, events, oauthToken, userId, clientId, followEnabled };
     }
 
     // ===== GENERATE HTML =====
@@ -217,59 +336,63 @@ client.connect().catch(console.error);
 // === EVENTSUB WEBSOCKET — Follow Events ===
 var OAUTH_TOKEN="${config.oauthToken}";
 var USER_ID="${config.userId}";
+var CLIENT_ID="${config.clientId}";
 var esWs=null;
 var keepaliveTimeout=null;
-var CLIENT_ID="";
+var reconnecting=false;
 
-// First, get the client ID associated with this token
-fetch("https://id.twitch.tv/oauth2/validate",{headers:{"Authorization":"OAuth "+OAUTH_TOKEN}})
-.then(function(r){return r.json();})
-.then(function(data){
-    if(!data.client_id){console.error("Invalid OAuth token");return;}
-    CLIENT_ID=data.client_id;
-    connectEventSub();
-})
-.catch(function(e){console.error("Token validation failed:",e);});
+console.log("[Follow] Connecting to EventSub...");
 
 function connectEventSub(reconnectUrl){
     var url=reconnectUrl||"wss://eventsub.wss.twitch.tv/ws";
+    if(esWs&&!reconnecting){try{esWs.close();}catch(e){}}
+    reconnecting=!!reconnectUrl;
     esWs=new WebSocket(url);
+
+    esWs.onopen=function(){
+        console.log("[Follow] WebSocket connected to",url);
+    };
 
     esWs.onmessage=function(event){
         var msg=JSON.parse(event.data);
         var type=msg.metadata&&msg.metadata.message_type;
+        console.log("[Follow] Message:",type);
 
         if(type==="session_welcome"){
             var sessionId=msg.payload.session.id;
             var ka=msg.payload.session.keepalive_timeout_seconds||30;
             resetKeepalive(ka);
-            // Subscribe to channel.follow v2
-            fetch("https://api.twitch.tv/helix/eventsub/subscriptions",{
-                method:"POST",
-                headers:{
-                    "Authorization":"Bearer "+OAUTH_TOKEN,
-                    "Client-Id":CLIENT_ID,
-                    "Content-Type":"application/json"
-                },
-                body:JSON.stringify({
-                    type:"channel.follow",
-                    version:"2",
-                    condition:{broadcaster_user_id:USER_ID,moderator_user_id:USER_ID},
-                    transport:{method:"websocket",session_id:sessionId}
-                })
-            })
-            .then(function(r){return r.json();})
-            .then(function(d){
-                if(d.data&&d.data.length){console.log("Subscribed to channel.follow");}
-                else{console.error("Follow sub failed:",d);}
-            })
-            .catch(function(e){console.error("Follow sub error:",e);});
+
+            if(reconnecting){reconnecting=false;console.log("[Follow] Reconnected, session kept.");return;}
+
+            console.log("[Follow] Subscribing to channel.follow...");
+            var xhr=new XMLHttpRequest();
+            xhr.open("POST","https://api.twitch.tv/helix/eventsub/subscriptions",true);
+            xhr.setRequestHeader("Authorization","Bearer "+OAUTH_TOKEN);
+            xhr.setRequestHeader("Client-Id",CLIENT_ID);
+            xhr.setRequestHeader("Content-Type","application/json");
+            xhr.onload=function(){
+                var d;try{d=JSON.parse(xhr.responseText);}catch(e){d={};}
+                if(xhr.status>=200&&xhr.status<300&&d.data&&d.data.length){
+                    console.log("[Follow] Subscribed successfully!");
+                }else{
+                    console.error("[Follow] Subscription failed (HTTP "+xhr.status+"):",d);
+                }
+            };
+            xhr.onerror=function(){console.error("[Follow] Subscription request failed");};
+            xhr.send(JSON.stringify({
+                type:"channel.follow",
+                version:"2",
+                condition:{broadcaster_user_id:USER_ID,moderator_user_id:USER_ID},
+                transport:{method:"websocket",session_id:sessionId}
+            }));
         }
         else if(type==="notification"){
             resetKeepalive(30);
             var sub=msg.payload.subscription;
             if(sub&&sub.type==="channel.follow"){
                 var follower=msg.payload.event.user_name;
+                console.log("[Follow] New follower:",follower);
                 if(EVENTS.follow)q("follow",{user:follower});
             }
         }
@@ -278,28 +401,33 @@ function connectEventSub(reconnectUrl){
         }
         else if(type==="session_reconnect"){
             var newUrl=msg.payload.session.reconnect_url;
+            console.log("[Follow] Reconnecting to",newUrl);
             connectEventSub(newUrl);
         }
         else if(type==="revocation"){
-            console.warn("EventSub subscription revoked:",msg.payload.subscription.status);
+            console.warn("[Follow] Subscription revoked:",msg.payload.subscription.status);
         }
     };
 
-    esWs.onerror=function(e){console.error("EventSub WS error:",e);};
-    esWs.onclose=function(){
-        console.log("EventSub WS closed, reconnecting in 5s...");
-        setTimeout(function(){connectEventSub();},5000);
+    esWs.onerror=function(e){console.error("[Follow] WebSocket error:",e);};
+    esWs.onclose=function(e){
+        if(!reconnecting){
+            console.log("[Follow] WebSocket closed (code "+e.code+"), reconnecting in 5s...");
+            setTimeout(function(){connectEventSub();},5000);
+        }
     };
 }
 
 function resetKeepalive(seconds){
     if(keepaliveTimeout)clearTimeout(keepaliveTimeout);
     keepaliveTimeout=setTimeout(function(){
-        console.warn("Keepalive timeout, reconnecting...");
-        if(esWs)esWs.close();
+        console.warn("[Follow] Keepalive timeout, reconnecting...");
+        if(esWs)try{esWs.close();}catch(e){}
         connectEventSub();
     },(seconds+5)*1000);
 }
+
+connectEventSub();
 ` : '';
 
         const html = `<!DOCTYPE html>
@@ -454,7 +582,7 @@ function show(eventKey,vars){
 
         alertText.textContent = text;
 
-        // Play audio in preview (muted by default to avoid autoplay blocks)
+        // Play audio in preview
         let audioEl = null;
         if (audio) {
             audioEl = new Audio(audio.dataUrl);

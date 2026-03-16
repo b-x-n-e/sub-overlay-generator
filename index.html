@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stream Overlay Generator — by BXNE</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=6">
+    <link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
     <div class="page">
@@ -22,22 +22,32 @@
                 <input type="text" id="channel" placeholder="your twitch channel" autocomplete="off" spellcheck="false">
             </div>
             <div id="oauth-section" class="oauth-section" style="display:none;">
-                <p class="oauth-note">Follow alerts require a Twitch OAuth token and your User ID.</p>
-                <div class="field-row" style="margin-top:0.75rem;">
-                    <div class="field">
-                        <label>OAuth Token</label>
+                <p class="oauth-note">Follow alerts require connecting your Twitch account.</p>
+
+                <div id="oauth-disconnected">
+                    <div class="field" style="margin-top:0.75rem;">
+                        <label>Client ID</label>
                         <div class="input-wrap">
-                            <input type="password" id="oauth-token" placeholder="oauth:abc123…" autocomplete="off" spellcheck="false">
+                            <input type="text" id="client-id" placeholder="your Twitch app Client ID" autocomplete="off" spellcheck="false">
                         </div>
                     </div>
-                    <div class="field">
-                        <label>User ID</label>
-                        <div class="input-wrap">
-                            <input type="text" id="user-id" placeholder="123456789" autocomplete="off" spellcheck="false">
-                        </div>
+                    <button id="twitch-connect-btn" class="btn twitch-btn" style="margin-top:0.75rem;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg>
+                        Connect with Twitch
+                    </button>
+                    <p class="oauth-hint">You need a Twitch App Client ID. <a href="https://dev.twitch.tv/console/apps/create" target="_blank" rel="noopener">Register one here</a> — set the redirect URL to <code id="redirect-url-display"></code></p>
+                </div>
+
+                <div id="oauth-connected" style="display:none;">
+                    <div class="twitch-connected-bar">
+                        <span class="connected-dot"></span>
+                        <span>Connected as <strong id="twitch-username"></strong></span>
+                        <button id="twitch-disconnect-btn" class="btn-disconnect">&times;</button>
                     </div>
                 </div>
-                <p class="oauth-hint">Get a token at <a href="https://twitchtokengenerator.com" target="_blank" rel="noopener">twitchtokengenerator.com</a> with the <code>moderator:read:followers</code> scope. Find your User ID at <a href="https://www.streamweasels.com/tools/convert-twitch-username-to-user-id/" target="_blank" rel="noopener">streamweasels.com</a>.</p>
+
+                <input type="hidden" id="oauth-token" value="">
+                <input type="hidden" id="user-id" value="">
             </div>
         </section>
 
@@ -373,6 +383,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=6"></script>
+    <script src="app.js?v=7"></script>
 </body>
 </html>

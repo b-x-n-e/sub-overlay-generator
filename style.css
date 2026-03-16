@@ -158,6 +158,68 @@ input[type="number"] { -moz-appearance: textfield; }
     border-radius: 3px;
     font-size: 0.85em;
     color: var(--text-2);
+    word-break: break-all;
+}
+
+/* Twitch Connect Button */
+.btn.twitch-btn {
+    background: #9146ff;
+    color: #fff;
+}
+
+.btn.twitch-btn:hover {
+    background: #7c3aed;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(145,70,255,0.3);
+}
+
+.btn.twitch-btn:active { transform: translateY(0); }
+
+/* Connected State */
+.twitch-connected-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.75rem 1rem;
+    margin-top: 0.75rem;
+    background: rgba(145,70,255,0.08);
+    border: 1px solid rgba(145,70,255,0.25);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    color: var(--text-2);
+}
+
+.twitch-connected-bar strong { color: #b07aff; }
+
+.connected-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 6px rgba(34,197,94,0.5);
+    flex-shrink: 0;
+}
+
+.btn-disconnect {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--text-3);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--ease);
+}
+
+.btn-disconnect:hover {
+    color: #fff;
+    border-color: rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.08);
 }
 
 /* ===== FILE DROP ===== */
