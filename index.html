@@ -4,54 +4,82 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OBS Twitch Sub Overlay Generator</title>
-    <!-- Futuristic Typography -->
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Ambient background glow -->
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
     <div class="container">
         <header>
-            <h1>SUB_OVERLAY</h1>
-            <p class="subtitle">GENERATE YOUR OBS ALERT HTML</p>
+            <div class="logo-mark">⬡</div>
+            <h1>Sub Overlay <span class="accent">Generator</span></h1>
+            <p class="subtitle">Create self-contained OBS sub alert overlays in seconds.</p>
         </header>
         
-        <main class="panel">
+        <main class="card">
             <div class="form-group">
-                <label for="channel">TWITCH CHANNEL</label>
-                <input type="text" id="channel" placeholder="e.g. ninja" autocomplete="off">
+                <label for="channel">Twitch Channel</label>
+                <div class="input-wrap">
+                    <span class="input-icon">@</span>
+                    <input type="text" id="channel" placeholder="channel name" autocomplete="off" spellcheck="false">
+                </div>
             </div>
 
             <div class="form-group">
-                <label for="media">UPLOAD MEDIA</label>
+                <label>Alert Media</label>
                 <div class="file-drop-area" id="drop-area">
-                    <span id="file-name">DROP FILE OR CLICK (GIF/MP4)</span>
+                    <div class="drop-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    </div>
+                    <span id="file-name">Drop a <strong>GIF</strong> or <strong>MP4</strong> here</span>
+                    <span class="drop-hint">or click to browse</span>
                     <input type="file" id="media" accept="image/gif, video/mp4, video/webm">
                 </div>
-                <p class="note">Media is encoded directly to the HTML file (no server necessary).</p>
             </div>
 
             <div class="form-row">
-                <div class="form-group half">
-                    <label for="duration">DURATION (SEC)</label>
-                    <input type="number" id="duration" value="5" min="1" max="60">
+                <div class="form-group">
+                    <label for="duration">Duration</label>
+                    <div class="input-wrap compact">
+                        <input type="number" id="duration" value="5" min="1" max="60">
+                        <span class="input-suffix">sec</span>
+                    </div>
                 </div>
-                <div class="form-group half">
-                    <label for="text-template">TEMPLATE</label>
-                    <input type="text" id="text-template" value="{user} SUBBED" autocomplete="off">
+                <div class="form-group flex-grow">
+                    <label for="text-template">Alert Text</label>
+                    <div class="input-wrap">
+                        <input type="text" id="text-template" value="{user} just subscribed!" autocomplete="off">
+                    </div>
                 </div>
             </div>
             
+            <p class="template-hint">Use <code>{user}</code> for the subscriber's name</p>
+
             <div class="actions">
-                <button id="generate-btn" class="btn primary">GENERATE OVERLAY HTML</button>
-                <button id="test-btn" class="btn outline">PREVIEW</button>
+                <button id="generate-btn" class="btn primary">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Generate & Download HTML
+                </button>
+                <button id="test-btn" class="btn ghost">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    Preview Alert
+                </button>
             </div>
         </main>
+
+        <footer>
+            <p>Add the downloaded <code>.html</code> file as a <strong>Browser Source</strong> in OBS.</p>
+        </footer>
     </div>
 
-    <!-- Preview Container inside generator -->
+    <!-- Preview Modal -->
     <div id="preview-modal" class="hidden">
-        <div class="modal-content">
-            <button id="close-preview" class="btn outline small">CLOSE PREVIEW</button>
+        <div class="modal-backdrop"></div>
+        <div class="modal-inner">
+            <button id="close-preview" class="btn-close">&times;</button>
             <div id="preview-area">
                 <div id="alert-box" class="hidden">
                     <div id="media-container"></div>
