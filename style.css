@@ -1,251 +1,248 @@
-/* Glassmorphism, Modern typography, dark mode, smooth animations */
 :root {
-    --primary: #9146FF; /* Twitch purple */
-    --primary-hover: #772CE8;
-    --bg-color: transparent;
-    --glass-bg: rgba(24, 24, 27, 0.85);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --text-main: #efeff1;
-    --text-muted: #adadb8;
-    --font-family: 'Inter', sans-serif;
+    --bg: #050505;
+    --panel-bg: #0a0a0a;
+    --border: #333;
+    --border-focus: #fff;
+    --text-main: #fff;
+    --text-muted: #888;
+    --accent: #fff;
+    --font: 'Space Grotesk', sans-serif;
 }
 
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-    font-family: var(--font-family);
-    background-color: var(--bg-color); /* Important for OBS transparency */
+    background-color: var(--bg);
     color: var(--text-main);
+    font-family: var(--font);
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
-    overflow: hidden; /* No scrollbars in OBS */
-    transition: background-color 0.5s ease;
+    min-height: 100vh;
+    letter-spacing: 0.5px;
 }
 
-/* Setup Mode Background */
-body.setup-mode {
-    background: radial-gradient(circle at top left, #29104A, #0e0e10 60%);
-}
-
-.hidden {
-    display: none !important;
-}
-
-/* Setup Container */
-.glass-panel {
-    background: var(--glass-bg);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid var(--glass-border);
-    border-radius: 16px;
-    padding: 40px;
+.container {
     width: 100%;
-    max-width: 480px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    max-width: 500px;
+    padding: 2rem;
 }
 
-@keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+header {
+    text-align: center;
+    margin-bottom: 2rem;
 }
 
 h1 {
-    font-size: 24px;
-    font-weight: 800;
-    margin-bottom: 8px;
-    color: #fff;
-    text-align: center;
+    font-size: 2.2rem;
+    font-weight: 700;
+    letter-spacing: 6px;
+    margin-bottom: 0.5rem;
 }
 
 .subtitle {
-    text-align: center;
+    font-size: 0.8rem;
     color: var(--text-muted);
-    font-size: 14px;
-    margin-bottom: 32px;
+    letter-spacing: 3px;
+}
+
+.panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    padding: 2.5rem;
+    border-radius: 4px;
 }
 
 .form-group {
-    margin-bottom: 24px;
+    margin-bottom: 2rem;
+}
+
+.form-row {
+    display: flex;
+    gap: 1rem;
+}
+
+.half {
+    flex: 1;
 }
 
 label {
     display: block;
-    margin-bottom: 8px;
-    font-size: 13px;
+    font-size: 0.75rem;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
     color: var(--text-muted);
+    margin-bottom: 0.75rem;
 }
 
 input[type="text"], input[type="number"] {
     width: 100%;
-    padding: 12px 16px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    color: #fff;
-    font-size: 15px;
-    font-family: inherit;
-    transition: all 0.2s ease;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-main);
+    font-family: var(--font);
+    font-size: 1rem;
+    padding: 0.5rem 0;
+    transition: border-color 0.3s ease;
 }
 
 input[type="text"]:focus, input[type="number"]:focus {
     outline: none;
-    border-color: var(--primary);
-    background: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 0 0 3px rgba(145, 70, 255, 0.25);
+    border-bottom-color: var(--accent);
 }
 
-/* File Drop Area */
 .file-drop-area {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    padding: 24px;
-    border: 2px dashed rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.02);
-    transition: all 0.2s ease;
-    cursor: pointer;
+    border: 1px dashed var(--border);
+    padding: 2rem;
     text-align: center;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
 .file-drop-area:hover, .file-drop-area.dragover {
-    background: rgba(145, 70, 255, 0.1);
-    border-color: var(--primary);
+    border-color: var(--border-focus);
+    background: rgba(255, 255, 255, 0.02);
 }
 
 .file-drop-area input[type="file"] {
     position: absolute;
-    left: 0;
-    top: 0;
-    height: 100%;
-    width: 100%;
+    top: 0; left: 0; width: 100%; height: 100%;
     opacity: 0;
     cursor: pointer;
 }
 
 #file-name {
-    font-size: 14px;
-    color: var(--primary);
+    font-size: 0.85rem;
     font-weight: 600;
-    pointer-events: none;
 }
 
 .note {
-    font-size: 12px;
+    font-size: 0.7rem;
     color: var(--text-muted);
-    margin-top: 6px;
+    margin-top: 0.5rem;
 }
 
-/* Buttons */
-.primary-btn, .secondary-btn {
+.actions {
+    margin-top: 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.btn {
     width: 100%;
-    padding: 14px;
-    border: none;
-    border-radius: 8px;
-    font-size: 15px;
+    padding: 1rem;
+    font-family: var(--font);
+    font-size: 0.85rem;
     font-weight: 600;
-    font-family: inherit;
+    letter-spacing: 1.5px;
     cursor: pointer;
-    transition: all 0.2s ease;
-    margin-bottom: 12px;
+    border-radius: 2px;
+    transition: all 0.3s ease;
 }
 
-.primary-btn {
-    background-color: var(--primary);
-    color: white;
-    box-shadow: 0 4px 14px rgba(145, 70, 255, 0.4);
+.btn.primary {
+    background: var(--text-main);
+    color: var(--bg);
+    border: 1px solid var(--text-main);
 }
 
-.primary-btn:hover {
-    background-color: var(--primary-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(145, 70, 255, 0.6);
+.btn.primary:hover {
+    background: transparent;
+    color: var(--text-main);
 }
 
-.primary-btn:active {
-    transform: translateY(0);
+.btn.outline {
+    background: transparent;
+    color: var(--text-main);
+    border: 1px solid var(--border);
 }
 
-.secondary-btn {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: white;
+.btn.outline:hover {
+    border-color: var(--text-main);
 }
 
-.secondary-btn:hover {
-    background-color: rgba(255, 255, 255, 0.2);
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
-.help-text {
-    text-align: center;
-    font-size: 12px;
-    color: var(--text-muted);
-    margin-top: 16px;
-}
+/* Modal and Preview */
+.hidden { display: none !important; }
 
-/* Overlay Container & Alerts Elements */
-#overlay-container {
-    width: 100vw;
-    height: 100vh;
+#preview-modal {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(5,5,5,0.95);
+    z-index: 1000;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
+.modal-content {
+    background: transparent;
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-content .btn.small {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    width: auto;
+    padding: 0.5rem 1rem;
+    z-index: 10;
+}
+
+#preview-area {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Alert Box */
 #alert-box {
     text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
+    gap: 1.5rem;
 }
 
 #media-container {
-    max-width: 800px;
-    max-height: 500px;
+    max-width: 600px;
+    max-height: 400px;
 }
 
 #media-container img, #media-container video {
     max-width: 100%;
     max-height: 100%;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    border-radius: 4px;
 }
 
 @keyframes popIn {
-    0% { transform: scale(0.5); opacity: 0; }
-    90% { transform: scale(1.05); opacity: 1; }
-    100% { transform: scale(1); opacity: 1; }
+    0% { transform: scale(0.95); opacity: 0; filter: blur(10px); }
+    100% { transform: scale(1); opacity: 1; filter: blur(0); }
 }
 
 @keyframes popOut {
-    0% { transform: scale(1); opacity: 1; }
-    100% { transform: scale(0.8); opacity: 0; }
+    0% { transform: scale(1); opacity: 1; filter: blur(0); }
+    100% { transform: scale(0.95); opacity: 0; filter: blur(10px); }
 }
 
 #alert-text {
-    font-size: 48px;
-    font-weight: 800;
-    color: white;
-    text-shadow: 
-        0 4px 12px rgba(0,0,0,0.5),
-        -2px -2px 0 rgba(0,0,0,0.8),  
-         2px -2px 0 rgba(0,0,0,0.8),
-        -2px  2px 0 rgba(0,0,0,0.8),
-         2px  2px 0 rgba(0,0,0,0.8);
-    background: linear-gradient(135deg, #fff 0%, #d4dbff 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    padding: 0 20px;
+    font-size: 3rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(255,255,255,0.3);
 }
