@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBS Twitch Sub Overlay Generator</title>
+    <!-- Modern Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- localforage for IndexedDB storage -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    <!-- tmi.js for Twitch Chat -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tmi.js/1.8.5/tmi.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="setup-mode">
+    <!-- Setup UI -->
+    <div id="setup-container" class="glass-panel">
+        <h1>Sub Overlay Setup</h1>
+        <p class="subtitle">Configure your OBS sub alert overlay easily.</p>
+        
+        <div class="form-group">
+            <label for="channel">Twitch Channel to Monitor</label>
+            <input type="text" id="channel" placeholder="e.g. ninja">
+        </div>
+
+        <div class="form-group">
+            <label for="media">Upload Media (GIF or MP4)</label>
+            <div class="file-drop-area" id="drop-area">
+                <span id="file-name">Drag & Drop or Click to Upload</span>
+                <input type="file" id="media" accept="image/gif, video/mp4, video/webm">
+            </div>
+            <p class="note">Media is saved directly in OBS (no server upload required).</p>
+        </div>
+
+        <div class="form-group">
+            <label for="duration">Alert Duration (seconds)</label>
+            <input type="number" id="duration" value="5" min="1" max="60">
+        </div>
+
+        <div class="form-group">
+            <label for="text-template">Text Template</label>
+            <input type="text" id="text-template" value="{user} just subscribed!">
+            <p class="note">Use {user} for the subscriber's name.</p>
+        </div>
+
+        <button id="save-btn" class="primary-btn">Save & Start Overlay</button>
+        <button id="test-btn" class="secondary-btn">Test Alert</button>
+        <p class="help-text"><strong>OBS USERS:</strong> Right-click your Browser Source -> "Interact" to set this up.</p>
+    </div>
+
+    <!-- Active Overlay UI -->
+    <div id="overlay-container" class="hidden">
+        <div id="alert-box" class="hidden">
+            <div id="media-container"></div>
+            <h2 id="alert-text"></h2>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
