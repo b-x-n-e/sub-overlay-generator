@@ -32,8 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ===== TWITCH OAUTH FLOW =====
     // Restore saved client ID
-    const savedClientId = localStorage.getItem('twitch_client_id');
-    if (savedClientId) clientIdInput.value = savedClientId;
+    // Client ID is hardcoded in HTML; no need to restore from localStorage
 
     // Check for token in URL hash (returned from Twitch OAuth redirect)
     function checkOAuthReturn() {
