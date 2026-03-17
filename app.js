@@ -341,6 +341,12 @@ var esWs=null;
 var keepaliveTimeout=null;
 var reconnecting=false;
 
+if(window.location.protocol==="file:"){
+    console.error("[Follow] ERROR: Follow alerts cannot work when loaded as a local file (file://) due to Twitch API CORS restrictions.");
+    console.error("[Follow] FIX: Serve this file via HTTP. Run: npx serve /path/to/folder");
+    console.error("[Follow] Then use http://localhost:3000/overlay.html in OBS Browser Source URL.");
+}
+
 console.log("[Follow] Connecting to EventSub...");
 
 function connectEventSub(reconnectUrl){
