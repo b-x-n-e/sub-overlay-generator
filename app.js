@@ -103,7 +103,8 @@ document.addEventListener('DOMContentLoaded', () => {
             + '?client_id=' + encodeURIComponent(clientId)
             + '&redirect_uri=' + encodeURIComponent(REDIRECT_URI)
             + '&response_type=token'
-            + '&scope=moderator:read:followers';
+            + '&scope=' + encodeURIComponent('moderator:read:followers')
+            + '&force_verify=false';
 
         window.location.href = authUrl;
     });
