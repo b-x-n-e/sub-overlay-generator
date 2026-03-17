@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stream Overlay Generator — by BXNE</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=9">
+    <link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
     <div class="page">
@@ -355,12 +355,12 @@
         <section class="card instructions">
             <h2 class="card-title">OBS Setup</h2>
             <ol>
-                <li>Click <strong>Generate &amp; Download HTML</strong> above.</li>
-                <li>In OBS, click the <strong>+</strong> under Sources → <strong>Browser</strong>.</li>
-                <li>If you <strong>only use sub alerts</strong> (no follow): check <strong>"Local file"</strong> and browse to the <code>.html</code> file.</li>
-                <li>If you <strong>use follow alerts</strong>: run <code>npx serve /path/to/folder</code> in a terminal, then paste the URL (e.g. <code>http://localhost:3000/overlay.html</code>) into the OBS Browser source URL field.</li>
-                <li>Set width &amp; height to your stream resolution (e.g. <strong>1920 × 1080</strong>).</li>
-                <li>Done — the overlay is transparent and will show alerts automatically.</li>
+                <li><span>Click <strong>Generate &amp; Download HTML</strong> above.</span></li>
+                <li><span>In OBS, click the <strong>+</strong> under Sources → <strong>Browser</strong>.</span></li>
+                <li><span>If you <strong>only use sub alerts</strong> (no follow): check <strong>"Local file"</strong> and browse to the <code>.html</code> file.</span></li>
+                <li><span>If you <strong>use follow alerts</strong>: run <code>npx serve /path/to/folder</code> in a terminal, then paste the URL (e.g. <code>http://localhost:3000/overlay.html</code>) into the OBS Browser source URL field.</span></li>
+                <li><span>Set width &amp; height to your stream resolution (e.g. <strong>1920 × 1080</strong>).</span></li>
+                <li><span>Done — the overlay is transparent and will show alerts automatically.</span></li>
             </ol>
             <p class="note">Follow alerts require the overlay to be served over HTTP (not loaded as a local file) because the Twitch API blocks requests from <code>file://</code> origins. Sub-only overlays work fine as local files.</p>
         </section>
@@ -384,6 +384,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=9"></script>
+    <script src="app.js?v=10"></script>
 </body>
 </html>
